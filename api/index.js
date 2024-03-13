@@ -9,11 +9,15 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 
+const Ticket = require("./models/Ticket");
+const TicketModel = require("./models/Ticket");
+
 const app = express();
 
-const bcryptSalt = bcrypt.genSaltSync(10);
-const jwtSecret = "bsbsfbrnsftentwnnwnwn";
+const bcryptSalt = bcrypt.genSaltSync(10); //! To encriypt the password text ---
+const jwtSecret = "bsbsfbrnsftentwnnwnwn"; //! JWT token secret code for encryption ---
 
+//! Making a connection with backend and frontend (in my pc Backend runnig in PORT 4000 Frontend running in PORT 5173 )
 app.use(express.json());
 app.use(cookieParser());
 app.use(
@@ -23,12 +27,14 @@ app.use(
    })
 );
 
-mongoose.connect(process.env.MONGO_URL);
+mongoose.connect(process.env.MONGO_URL); //! Setting up the connection to mongoDB URL in .env file ---
 
+//! Checking whether API is working --------------------------------------------------------
 app.get("/test", (req, res) => {
    res.json("test ok");
 });
 
+//! Register page API endpoint -------------------------------------------------------------
 app.post("/register", async (req, res) => {
    const { name, email, password } = req.body;
 
@@ -44,6 +50,7 @@ app.post("/register", async (req, res) => {
    }
 });
 
+//! Login API endpoint checking whether database have the entered user profile ------------------------
 app.post("/login", async (req, res) => {
    const { email, password } = req.body;
 
@@ -58,7 +65,7 @@ app.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid password" });
    }
 
-   // User verified, create and send JWT token
+   //! User verified, create and send JWT token ----------------------------------------------------
    jwt.sign(
       {
          email: userDoc.email,
@@ -75,6 +82,7 @@ app.post("/login", async (req, res) => {
    );
 });
 
+//! API endpoint for User profile (This is for check purposes)-----------------------------------------------
 app.get("/profile", (req, res) => {
    const { token } = req.cookies;
    if (token) {
@@ -88,13 +96,13 @@ app.get("/profile", (req, res) => {
    }
 });
 
+//! Logout Functionality --------------------------------------------------------------------------
 app.post("/logout", (req, res) => {
    res.cookie("token", "").json(true);
 });
 
-//!=======================  GET FROM DATABASE  =============================================
+//!=======================  GET FROM DATABASE  ===========================================
 //!DEMO FOR DEVELOPMENT PURPOSE------------------------
-const multer = require("multer");
 
 const eventSchema = new mongoose.Schema({
    owner: String,
@@ -112,13 +120,11 @@ const eventSchema = new mongoose.Schema({
 
 const Event = mongoose.model("Event", eventSchema);
 
-// Configure multer to handle file uploads
-const upload = multer({ dest: "./uploads" });
-
-// API endpoint to create an event
-app.post("/createEvent", upload.single("image"), async (req, res) => {
+//! API endpoint to create an event (This is for checking purpose) -----------------------------------------
+app.post("/createEvent", async (req, res) => {
    try {
       const eventData = req.body;
+
       eventData.image = req.file ? req.file.path : "";
       const newEvent = new Event(eventData);
       await newEvent.save();
@@ -128,7 +134,7 @@ app.post("/createEvent", upload.single("image"), async (req, res) => {
    }
 });
 
-// API endpoint to fetch all events
+//! API endpoint to fetch all events for index page ----------------------------------------------------
 app.get("/createEvent", async (req, res) => {
    try {
       const events = await Event.find();
@@ -138,7 +144,7 @@ app.get("/createEvent", async (req, res) => {
    }
 });
 
-// API endpoint to fetch event by id
+//! API endpoint to fetch event by id for Event page ---------------------------------------
 app.get("/event/:id", async (req, res) => {
    const { id } = req.params;
    try {
@@ -149,7 +155,7 @@ app.get("/event/:id", async (req, res) => {
    }
 });
 
-// API endpoint to adding and fetch likes 
+//! API endpoint to adding and fetch likes ---------------------------------------------------
 app.post("/event/:eventId", (req, res) => {
    const eventId = req.params.eventId;
 
@@ -171,7 +177,7 @@ app.post("/event/:eventId", (req, res) => {
       });
 });
 
-// Add a comment to an event
+//! Add a comment to an event (NOT IN USE) ------------------------------------------
 app.post("/event/:eventId", (req, res) => {
    const eventId = req.params.eventId;
    const comment = req.body.comment;
@@ -181,7 +187,6 @@ app.post("/event/:eventId", (req, res) => {
          if (!event) {
             return res.status(404).json({ message: "Event not found" });
          }
-
          event.comments.push(comment);
          return event.save();
       })
@@ -194,19 +199,90 @@ app.post("/event/:eventId", (req, res) => {
       });
 });
 
-// API endpoint to fetch event by id to clendar
+//! API endpoint to fetch event by id to calendar ------------------------------------------------------
 app.get("/events", (req, res) => {
    Event.find()
-     .then((events) => {
-       res.json(events);
+      .then((events) => {
+         res.json(events);
+      })
+      .catch((error) => {
+         console.error("Error fetching events:", error);
+         res.status(500).json({ message: "Server error" });
+      });
+});
+
+//! API endpoint to fetch event by id to ordersummary - Apsara
+app.get("/event/:id/ordersummary", async (req, res) => {
+   const { id } = req.params;
+   try {
+      const event = await Event.findById(id);
+      res.json(event);
+   } catch (error) {
+      res.status(500).json({ error: "Failed to fetch event from MongoDB" });
+   }
+});
+
+//! API endpoint to fetch event by id to paymentsummary - Apsara
+app.get("/event/:id/ordersummary/paymentsummary", async (req, res) => {
+   const { id } = req.params;
+   try {
+      const event = await Event.findById(id);
+      res.json(event);
+   } catch (error) {
+      res.status(500).json({ error: "Failed to fetch event from MongoDB" });
+   }
+});
+
+//! Api endpoint to post ticket data -------------------------------
+app.post(`/tickets`, async (req, res) => {
+   try {
+      const ticketDetails = req.body;
+
+      
+
+      const newTicket = new Ticket(ticketDetails);
+      await newTicket.save();
+
+      return res.status(201).json({ ticket: newTicket}); 
+   } catch (error) {
+      console.error("Error creating ticket:", error);
+      return res.status(500).json({ error: "Failed to create ticket" });
+   }
+});
+
+app.get('/tickets/:id', async (req, res) => {
+   try {
+     const tickets = await Ticket.find();
+     res.json(tickets);
+   } catch (error) {
+     console.error('Error fetching tickets:', error);
+     res.status(500).json({ error: 'Failed to fetch tickets' });
+   }
+ });
+
+ app.get('/tickets/user/:userId', (req, res) => {
+   const userId = req.params.userId;
+ 
+   // Fetch tickets using userId to filter
+   Ticket.find({ userid: userId })
+     .then(tickets => {
+       res.json(tickets);
      })
-     .catch((error) => {
-       console.error("Error fetching events:", error);
-       res.status(500).json({ message: "Server error" });
+     .catch(error => {
+       console.error('Error fetching user tickets:', error);
+       res.status(500).json({ error: 'Failed to fetch user tickets' });
      });
  });
 
- 
-app.listen(4000);
+ app.delete('/tickets/:id', async (req, res) => {
+   try {
+     const ticketId = req.params.id;
+     await Ticket.findByIdAndDelete(ticketId);
+     res.status(204).send(); 
+   } catch (error) {
+     console.error('Error deleting ticket:', error);
+     res.status(500).json({ error: 'Failed to delete ticket' });
+   }
+ });
 
-//45ymnGKgjxOwO9EJ
+app.listen(4000); //! the API listning point -----

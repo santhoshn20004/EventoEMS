@@ -3,18 +3,19 @@ import axios from 'axios'
 import {Link} from "react-router-dom";
 import { UserContext } from "../UserContext";
 import { RxExit } from 'react-icons/rx';
-import { BiDownArrow } from 'react-icons/bi';
+import { BsFillCaretDownFill } from 'react-icons/bs';
 
 
 export default function Header() {
   const {user,setUser} = useContext(UserContext);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMenuOpen, setisMenuOpen] = useState(false);
   const [events, setEvents] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef();
 
+  //! Fetch events from the server -------------------------------------------------
   useEffect(() => {
-    // Fetch events from the server
+    
     axios.get("/events").then((response) => {
       setEvents(response.data);
     }).catch((error) => {
@@ -22,11 +23,12 @@ export default function Header() {
     });
   }, []);
 
+
+  //! Search bar functionality----------------------------------------------------
   useEffect(() => {
     const handleDocumentClick = (event) => {
       // Check if the clicked element is the search input or its descendant
       if (searchInputRef.current && !searchInputRef.current.contains(event.target)) {
-        // If clicked outside the search input, close the filter
         setSearchQuery("");
       }
     };
@@ -34,23 +36,24 @@ export default function Header() {
     // Listen for click events on the entire document
     document.addEventListener("click", handleDocumentClick);
 
-    // Clean up the event listener on component unmount
     return () => {
       document.removeEventListener("click", handleDocumentClick);
     };
   }, []); 
   
+  //! Logout Function --------------------------------------------------------
   async function logout(){
     await axios.post('/logout');
     setUser(null);
   }
+//! Search input ----------------------------------------------------------------
   const handleSearchInputChange = (event) => {
     setSearchQuery(event.target.value);
   };
 
   return (
     <div>
-      <header className='flex py-2 px-2 sm:px-6 justify-between place-items-center'>
+      <header className='flex py-2 px-6 sm:px-6 justify-between place-items-center'>
           
           <Link to={'/'} className="flex item-center ">
             <img src="../src/assets/logo.png" alt="" className='w-26 h-9'/>
@@ -67,9 +70,10 @@ export default function Header() {
             </div>
             {/* <div className='text-sm text-gray-300 font-semibold'>Search</div> */}      
           </div> 
-          
+
+          {/*------------------------- Search Functionality -------------------  */}
           {searchQuery && (
-          <div className="p-2 w-1/3 z-10 absolute rounded left-[25%] top-14 md:w-1/4 md:left-[16.5%] md:top-16 lg:w-[550px] lg:left-[11%] lg:top-16 bg-white">
+          <div className="p-2 w-144 z-10 absolute rounded left-[28.5%] top-14 md:w-[315px] md:left-[17%] md:top-16 lg:w-[540px] lg:left-[12%] lg:top-16 bg-white">
             {/* Filter events based on the search query */}
             {events
               .filter((event) =>
@@ -137,7 +141,8 @@ export default function Header() {
           
             </div>
           </div>
-              
+
+        {/* -------------------IF user is Logged DO this Main-------------------- */}
         {!!user &&(
           
           <div className="flex flex-row items-center gap-2 sm:gap-8 ">
@@ -146,7 +151,7 @@ export default function Header() {
                 {user.name.toUpperCase()}
               </Link>
               
-              <BiDownArrow className="cursor-pointer" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}/>
+              <BsFillCaretDownFill className="h-5 w-5 cursor-pointer hover:rotate-180 transition-all" onClick={() => setisMenuOpen(!isMenuOpen)}/>
             </div>
             <div className="hidden md:flex">
               <button onClick={logout} className="secondary">
@@ -154,10 +159,10 @@ export default function Header() {
                 <RxExit/>
               </button>
             </div>
-          </div>
-          
+          </div>  
         )}
 
+        {/* -------------------IF user is not Logged in DO this MAIN AND MOBILE-------------------- */}
         {!user &&(
           <div>
             
@@ -169,35 +174,37 @@ export default function Header() {
           </div>
         )}
           
-
+          {/* -------------------IF user is Logged DO this Mobile -------------------- */}
           {!!user &&(
-            <div className=""> 
+            //w-auto flex flex-col absolute bg-white pl-2 pr-6 py-5 gap-4 rounded-xl
+            <div className="absolute z-10 mt-64 flex flex-col w-48 bg-white right-2 md:right-[160px] rounded-lg shadow-lg"> 
             {/* TODO: */}
-              <nav className={`md:hidden ${isMobileMenuOpen ? 'block' : 'hidden'} flex flex-col absolute`}>
-                <Link to={'/createEvent'} >
+              <nav className={`block ${isMenuOpen ? 'block' : 'hidden'} `}>
+                <div className="flex flex-col font-semibold text-[16px]">
+                <Link className="flex hover:bg-background hover:shadow py-2 pt-3 pl-6 pr-8 rounded-lg" to={'/createEvent'} >
                   Create Event
                 </Link>
                 
-                <Link to={'/wallet'}>
+                <Link className="flex hover:bg-background hover:shadow py-2 pl-6 pr-8 rounded-lg" to={'/wallet'}>
                   <div>Wallet</div>
                 </Link>
                 
-                <Link to={'/verification'}>
+                <Link className="flex hover:bg-background hover:shadow py-2 pl-6 pr-8 rounded-lg" to={'/verification'}>
                   <div>Center</div>
                 </Link>
 
-                <Link to={'/calendar'}>
+                <Link className="flex hover:bg-background hover:shadow py-2 pl-6 pr-8 rounded-lg" to={'/calendar'}>
                   <div>Calendar</div>
                 </Link>
 
-                <Link onClick={logout}>
+                <Link className="flex hover:bg-background hover:shadow py-2 pl-6 pb-3 pr-8 rounded-lg" onClick={logout}>
                   Log out
                 </Link>
+                </div>
               </nav>
             </div>
         )}
 
-        
         </header>
           
     </div>
